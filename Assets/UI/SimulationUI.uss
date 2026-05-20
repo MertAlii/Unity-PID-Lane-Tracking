@@ -1,0 +1,252 @@
+/* ═══════════════════════════════════════════════════════════
+   PID Lane Tracking Simulation — Glassmorphism UI Theme
+   Dark AMOLED-friendly palette with frosted glass panels
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Root Container ─────────────────────────────────────── */
+.root-container {
+    width: 100%;
+    height: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 16px;
+}
+
+/* ── Glass Panel (Base Style) ───────────────────────────── */
+.glass-panel {
+    background-color: rgba(15, 20, 30, 0.75);
+    border-radius: 20px;
+    border-width: 1.5px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-top-color: rgba(255, 255, 255, 0.25);
+    padding: 16px;
+    margin: 4px;
+    transition-property: border-color;
+    transition-duration: 0.3s;
+}
+
+.glass-panel:hover {
+    border-color: rgba(0, 229, 255, 0.2);
+}
+
+/* ── Left Panel (Controls) ──────────────────────────────── */
+.left-panel {
+    width: 280px;
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    flex-direction: column;
+}
+
+/* ── Right Panel (Graphs) ───────────────────────────────── */
+.right-panel {
+    width: 420px;
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    flex-direction: column;
+}
+
+/* ── Bottom Bar (Diagnostics) ───────────────────────────── */
+.bottom-bar {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    translate: -50% 0;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 24px;
+    border-radius: 24px;
+}
+
+/* ── Typography ─────────────────────────────────────────── */
+.panel-title {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.95);
+    -unity-font-style: bold;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+}
+
+.control-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 2px;
+}
+
+.value-label {
+    font-size: 12px;
+    color: rgba(0, 229, 255, 0.9);
+    -unity-font-style: bold;
+    -unity-text-align: upper-right;
+}
+
+.graph-title {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 6px;
+    -unity-font-style: bold;
+    letter-spacing: 0.5px;
+}
+
+.diagnostic-label {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    -unity-font-style: bold;
+    margin: 0 8px;
+}
+
+/* ── Color Accents ──────────────────────────────────────── */
+.cyan-text {
+    color: rgb(0, 229, 255);
+}
+
+.error-text {
+    color: rgb(255, 82, 82);
+}
+
+.accent-text {
+    color: rgb(0, 229, 255);
+}
+
+/* ── Control Group ──────────────────────────────────────── */
+.control-group {
+    margin-bottom: 10px;
+}
+
+.label-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+/* ── Separator ──────────────────────────────────────────── */
+.separator {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.06);
+    margin: 8px 0;
+}
+
+.diagnostic-separator {
+    width: 1px;
+    height: 16px;
+    background-color: rgba(255, 255, 255, 0.15);
+    margin: 0 4px;
+}
+
+/* ── Slider Styling ─────────────────────────────────────── */
+.glass-slider {
+    margin: 0;
+    min-height: 20px;
+}
+
+.glass-slider .unity-base-slider__dragger {
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    background-color: rgb(0, 229, 255);
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.3);
+    margin-top: -7px;
+    transition-property: scale;
+    transition-duration: 0.15s;
+}
+
+.glass-slider .unity-base-slider__dragger:hover {
+    scale: 1.2 1.2;
+}
+
+.glass-slider .unity-base-slider__tracker {
+    height: 3px;
+    border-radius: 2px;
+    background-color: rgba(255, 255, 255, 0.1);
+    margin-top: -1px;
+}
+
+.glass-slider .unity-base-slider__drag-container {
+    min-height: 20px;
+}
+
+/* ── Dropdown Styling ───────────────────────────────────── */
+.glass-dropdown {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 6px 10px;
+    font-size: 12px;
+    margin: 0;
+}
+
+.glass-dropdown .unity-base-popup-field__arrow {
+    -unity-background-image-tint-color: rgba(0, 229, 255, 0.7);
+}
+
+/* ── Button Styling ─────────────────────────────────────── */
+.button-row {
+    flex-direction: row;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.glass-button {
+    flex-grow: 1;
+    margin: 0 4px;
+    padding: 10px 12px;
+    background-color: rgba(0, 229, 255, 0.15);
+    border-radius: 12px;
+    border-width: 1px;
+    border-color: rgba(0, 229, 255, 0.4);
+    border-top-color: rgba(0, 229, 255, 0.6);
+    color: rgb(0, 229, 255);
+    font-size: 12px;
+    -unity-font-style: bold;
+    transition-property: background-color, border-color, scale;
+    transition-duration: 0.2s;
+}
+
+.glass-button:hover {
+    background-color: rgba(0, 229, 255, 0.2);
+    border-color: rgba(0, 229, 255, 0.5);
+    scale: 1.02 1.02;
+}
+
+.glass-button:active {
+    background-color: rgba(0, 229, 255, 0.3);
+    scale: 0.97 0.97;
+}
+
+.tab-active {
+    background-color: rgba(0, 229, 255, 0.4);
+    border-color: rgba(0, 229, 255, 0.8);
+}
+
+.danger-button {
+    background-color: rgba(255, 82, 82, 0.1);
+    border-color: rgba(255, 82, 82, 0.25);
+    color: rgb(255, 82, 82);
+}
+
+.danger-button:hover {
+    background-color: rgba(255, 82, 82, 0.2);
+    border-color: rgba(255, 82, 82, 0.5);
+}
+
+/* ── Graph Canvas ───────────────────────────────────────── */
+.graph-section {
+    margin-bottom: 12px;
+}
+
+.graph-canvas {
+    width: 100%;
+    height: 150px;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.06);
+    background-color: rgba(10, 10, 20, 0.6);
+    -unity-background-scale-mode: stretch-to-fill;
+}

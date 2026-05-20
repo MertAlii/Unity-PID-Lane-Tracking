@@ -1,0 +1,140 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Style src="project://database/Assets/UI/SimulationUI.uss" />
+
+    <!-- Main Container -->
+    <ui:VisualElement name="root-container" class="root-container">
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- LEFT PANEL: PID Controls                    -->
+        <!-- ═══════════════════════════════════════════ -->
+        <ui:VisualElement name="left-panel" class="glass-panel left-panel">
+
+            <!-- Title -->
+            <ui:Label text="PID Controller" class="panel-title" />
+
+            <!-- Controller Mode -->
+            <ui:VisualElement class="control-group">
+                <ui:Label text="Controller Mode" class="control-label" />
+                <ui:DropdownField name="mode-dropdown" class="glass-dropdown" />
+            </ui:VisualElement>
+
+            <!-- Separator -->
+            <ui:VisualElement class="separator" />
+
+            <!-- Kp Slider -->
+            <ui:VisualElement class="control-group">
+                <ui:VisualElement class="label-row">
+                    <ui:Label text="Kp (Proportional)" class="control-label" />
+                    <ui:Label name="kp-value" text="2.00" class="value-label" />
+                </ui:VisualElement>
+                <ui:Slider name="kp-slider" low-value="0" high-value="20" value="2" class="glass-slider" />
+            </ui:VisualElement>
+
+            <!-- Ki Slider -->
+            <ui:VisualElement class="control-group">
+                <ui:VisualElement class="label-row">
+                    <ui:Label text="Ki (Integral)" class="control-label" />
+                    <ui:Label name="ki-value" text="0.10" class="value-label" />
+                </ui:VisualElement>
+                <ui:Slider name="ki-slider" low-value="0" high-value="5" value="0.1" class="glass-slider" />
+            </ui:VisualElement>
+
+            <!-- Kd Slider -->
+            <ui:VisualElement class="control-group">
+                <ui:VisualElement class="label-row">
+                    <ui:Label text="Kd (Derivative)" class="control-label" />
+                    <ui:Label name="kd-value" text="1.00" class="value-label" />
+                </ui:VisualElement>
+                <ui:Slider name="kd-slider" low-value="0" high-value="10" value="1" class="glass-slider" />
+            </ui:VisualElement>
+
+            <!-- Separator -->
+            <ui:VisualElement class="separator" />
+
+            <!-- Speed Slider -->
+            <ui:VisualElement class="control-group">
+                <ui:VisualElement class="label-row">
+                    <ui:Label text="Vehicle Speed" class="control-label" />
+                    <ui:Label name="speed-value" text="10.0 m/s" class="value-label accent-text" />
+                </ui:VisualElement>
+                <ui:Slider name="speed-slider" low-value="1" high-value="30" value="10" class="glass-slider" />
+            </ui:VisualElement>
+
+            <!-- Separator -->
+            <ui:VisualElement class="separator" />
+
+            <!-- Action Buttons -->
+            <ui:VisualElement class="button-row">
+                <ui:Button name="camera-button" text="📷 Camera [C]" class="glass-button" />
+                <ui:Button name="reset-button" text="🔄 Reset" class="glass-button danger-button" />
+                <ui:Button name="export-button" text="💾 Export" class="glass-button" />
+                <ui:Button name="toggle-graphs-button" text="📊 Toggle Graphs" class="glass-button" />
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- RIGHT PANEL: Graphs                        -->
+        <!-- ═══════════════════════════════════════════ -->
+        <ui:VisualElement name="right-panel" class="glass-panel right-panel">
+
+            <!-- Tabs -->
+            <ui:VisualElement class="button-row" style="margin-bottom: 12px;">
+                <ui:Button name="tab-general" text="General Graphs" class="glass-button tab-active" />
+                <ui:Button name="tab-pid" text="PID Components" class="glass-button" />
+            </ui:VisualElement>
+
+            <!-- General Tab Content -->
+            <ui:VisualElement name="content-general">
+                <!-- Graph 1: Control Output u(t) -->
+                <ui:VisualElement class="graph-section">
+                    <ui:Label text="Control Output u(t)" class="graph-title" />
+                    <ui:VisualElement name="control-graph" class="graph-canvas" />
+                </ui:VisualElement>
+
+                <!-- Graph 2: Lateral Error e(t) -->
+                <ui:VisualElement class="graph-section">
+                    <ui:Label text="Lateral Error e(t)" class="graph-title" />
+                    <ui:VisualElement name="error-graph" class="graph-canvas" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- PID Tab Content -->
+            <ui:VisualElement name="content-pid" style="display: none;">
+                <!-- P Graph -->
+                <ui:VisualElement class="graph-section" style="margin-bottom: 6px;">
+                    <ui:Label text="Proportional (P)" class="graph-title" />
+                    <ui:VisualElement name="p-graph" class="graph-canvas" style="height: 85px;" />
+                </ui:VisualElement>
+
+                <!-- I Graph -->
+                <ui:VisualElement class="graph-section" style="margin-bottom: 6px;">
+                    <ui:Label text="Integral (I)" class="graph-title" />
+                    <ui:VisualElement name="i-graph" class="graph-canvas" style="height: 85px;" />
+                </ui:VisualElement>
+
+                <!-- D Graph -->
+                <ui:VisualElement class="graph-section">
+                    <ui:Label text="Derivative (D)" class="graph-title" />
+                    <ui:VisualElement name="d-graph" class="graph-canvas" style="height: 85px;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- BOTTOM BAR: Real-time Diagnostics          -->
+        <!-- ═══════════════════════════════════════════ -->
+        <ui:VisualElement name="bottom-bar" class="glass-panel bottom-bar">
+            <ui:Label name="error-display" text="e(t): 0.000 m" class="diagnostic-label error-text" />
+            <ui:VisualElement class="diagnostic-separator" />
+            <ui:Label name="control-display" text="u(t): 0.000" class="diagnostic-label cyan-text" />
+            <ui:VisualElement class="diagnostic-separator" />
+            <ui:Label name="steering-display" text="δ: 0.0°" class="diagnostic-label" />
+            <ui:VisualElement class="diagnostic-separator" />
+            <ui:Label name="mode-display" text="Mode: PID" class="diagnostic-label accent-text" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>
