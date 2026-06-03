@@ -64,7 +64,10 @@
             <ui:VisualElement class="control-group">
                 <ui:VisualElement class="label-row">
                     <ui:Label text="Araç Kütlesi" class="control-label" />
-                    <ui:Label name="mass-value" text="1500 kg" class="value-label" />
+                    <ui:VisualElement style="flex-direction: row; align-items: center;">
+                        <ui:Label name="mass-value" text="1500 kg" class="value-label" style="margin-right: 4px;" />
+                        <ui:Button name="reset-mass-btn" text="↺" class="mini-reset-btn" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:Slider name="mass-slider" low-value="500" high-value="5000" value="1500" class="glass-slider" />
             </ui:VisualElement>
@@ -73,7 +76,10 @@
             <ui:VisualElement class="control-group">
                 <ui:VisualElement class="label-row">
                     <ui:Label text="Başlangıç Sapması" class="control-label" />
-                    <ui:Label name="offset-value" text="+1.50 m" class="value-label" />
+                    <ui:VisualElement style="flex-direction: row; align-items: center;">
+                        <ui:Label name="offset-value" text="+1.50 m" class="value-label" style="margin-right: 4px;" />
+                        <ui:Button name="reset-offset-btn" text="↺" class="mini-reset-btn" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:Slider name="offset-slider" low-value="-3" high-value="3" value="1.5" class="glass-slider" />
             </ui:VisualElement>

@@ -183,6 +183,8 @@ public class RoadMeshGenerator : MonoBehaviour
         roadMesh.uv = uvs.ToArray();
         roadMesh.RecalculateNormals();
         roadMesh.RecalculateBounds();
+        // Unity'nin devasa meshleri yanlışlıkla ekrandan kırpmasını (culling) önlemek için bounds'u devasa yapıyoruz
+        roadMesh.bounds = new Bounds(Vector3.zero, new Vector3(100000f, 100000f, 100000f));
 
         GetComponent<MeshFilter>().sharedMesh = roadMesh;
         if (roadMaterial != null)
@@ -276,6 +278,9 @@ public class RoadMeshGenerator : MonoBehaviour
         lineMesh.vertices = vertices.ToArray();
         lineMesh.triangles = triangles.ToArray();
         lineMesh.RecalculateNormals();
+        lineMesh.RecalculateBounds();
+        // Culling hatasını önlemek için bounds'u genişlet
+        lineMesh.bounds = new Bounds(Vector3.zero, new Vector3(100000f, 100000f, 100000f));
 
         mf.sharedMesh = lineMesh;
     }

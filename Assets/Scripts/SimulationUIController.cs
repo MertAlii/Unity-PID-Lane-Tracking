@@ -35,10 +35,13 @@ public class SimulationUIController : MonoBehaviour
     private Slider _massSlider;
     private Slider _offsetSlider;
 
-    // Varsayılan (başlangıç) PID değerleri — Reset'te geri dönülecek
+    // Başlangıç değerleri (Reset için)
     private float _defaultKp;
     private float _defaultKi;
     private float _defaultKd;
+    private float _defaultSpeed;
+    private float _defaultMass;
+    private float _defaultOffset;
 
     private Label _kpValueLabel;
     private Label _kiValueLabel;
@@ -55,8 +58,10 @@ public class SimulationUIController : MonoBehaviour
     private DropdownField _modeDropdown;
     private Button _cameraButton;
     private Button _resetButton;
-    private Button _exportButton;
-    private Button _toggleGraphsButton;
+    private Button _exportBtn;
+    private Button _toggleGraphsBtn;
+    private Button _resetMassBtn;
+    private Button _resetOffsetBtn;
 
     // Graph display elements
     private VisualElement _controlGraphImage;
@@ -119,8 +124,10 @@ public class SimulationUIController : MonoBehaviour
         _modeDropdown = root.Q<DropdownField>("mode-dropdown");
         _cameraButton = root.Q<Button>("camera-button");
         _resetButton = root.Q<Button>("reset-button");
-        _exportButton = root.Q<Button>("export-button");
-        _toggleGraphsButton = root.Q<Button>("toggle-graphs-button");
+        _exportBtn = root.Q<Button>("export-button");
+        _toggleGraphsBtn = root.Q<Button>("toggle-graphs-button");
+        _resetMassBtn = root.Q<Button>("reset-mass-btn");
+        _resetOffsetBtn = root.Q<Button>("reset-offset-btn");
 
         // ── Bind Graph Areas ─────────────────────
         _controlGraphImage = root.Q<VisualElement>("control-graph");
@@ -165,10 +172,13 @@ public class SimulationUIController : MonoBehaviour
         // ── Initialize Values ─────────────────────
         if (vehicleController != null)
         {
-            // Başlangıç PID değerlerini kaydet (Reset için)
+            // Başlangıç değerlerini kaydet (Reset için)
             _defaultKp = vehicleController.pidController.Kp;
             _defaultKi = vehicleController.pidController.Ki;
             _defaultKd = vehicleController.pidController.Kd;
+            _defaultSpeed = vehicleController.vehicleSpeed;
+            _defaultMass = vehicleController.vehicleMass;
+            _defaultOffset = vehicleController.initialLateralOffset;
 
             if (_kpSlider != null)
             {
@@ -285,9 +295,9 @@ public class SimulationUIController : MonoBehaviour
         }
 
         // ── Export Button ─────────────────────────
-        if (_exportButton != null)
+        if (_exportBtn != null)
         {
-            _exportButton.clicked += () =>
+            _exportBtn.clicked += () =>
             {
                 if (csvExporter != null)
                     csvExporter.ExportData();
@@ -295,15 +305,42 @@ public class SimulationUIController : MonoBehaviour
         }
 
         // ── Toggle Graphs Button ──────────────────
-        if (_toggleGraphsButton != null)
+        if (_toggleGraphsBtn != null)
         {
-            _toggleGraphsButton.clicked += () =>
+            _toggleGraphsBtn.clicked += () =>
             {
                 var rightPanel = root.Q<VisualElement>("right-panel");
                 if (rightPanel != null)
                 {
                     bool isVisible = rightPanel.style.display != DisplayStyle.None;
                     rightPanel.style.display = isVisible ? DisplayStyle.None : DisplayStyle.Flex;
+                }
+            };
+        }
+
+        // ── Reset Kütle / Sapma Butonları ─────────
+        if (_resetMassBtn != null)
+        {
+            _resetMassBtn.clicked += () =>
+            {
+                if (vehicleController != null)
+                {
+                    vehicleController.vehicleMass = _defaultMass;
+                    if (_massSlider != null) _massSlider.SetValueWithoutNotify(_defaultMass);
+                    if (_massValueLabel != null) _massValueLabel.text = _defaultMass.ToString("F0") + " kg";
+                }
+            };
+        }
+
+        if (_resetOffsetBtn != null)
+        {
+            _resetOffsetBtn.clicked += () =>
+            {
+                if (vehicleController != null)
+                {
+                    vehicleController.initialLateralOffset = _defaultOffset;
+                    if (_offsetSlider != null) _offsetSlider.SetValueWithoutNotify(_defaultOffset);
+                    if (_offsetValueLabel != null) _offsetValueLabel.text = _defaultOffset.ToString("+0.00;-0.00;0.00") + " m";
                 }
             };
         }
@@ -425,17 +462,18 @@ public class SimulationUIController : MonoBehaviour
     }
 
     /// <summary>
-    /// Kp, Ki, Kd slider'larını başlangıç değerlerine döndürür.
-    /// VehicleController'daki PID değerlerini de senkronize eder.
+    /// Tüm slider'ları (PID, Hız, Kütle, Offset) başlangıç değerlerine döndürür.
+    /// VehicleController'daki değerleri de senkronize eder.
     /// </summary>
     private void ResetPIDSliders()
     {
         if (vehicleController == null) return;
 
-        // PID değerlerini sıfırla
+        // PID değerlerini ve Hızı sıfırla
         vehicleController.pidController.Kp = _defaultKp;
         vehicleController.pidController.Ki = _defaultKi;
         vehicleController.pidController.Kd = _defaultKd;
+        vehicleController.vehicleSpeed = _defaultSpeed;
 
         // Slider'ları güncelle (UI ile kod senkronizasyonu)
         if (_kpSlider != null)
@@ -452,6 +490,11 @@ public class SimulationUIController : MonoBehaviour
         {
             _kdSlider.SetValueWithoutNotify(_defaultKd);
             if (_kdValueLabel != null) _kdValueLabel.text = _defaultKd.ToString("F2");
+        }
+        if (_speedSlider != null)
+        {
+            _speedSlider.SetValueWithoutNotify(_defaultSpeed);
+            if (_speedValueLabel != null) _speedValueLabel.text = _defaultSpeed.ToString("F1") + " m/s";
         }
     }
 
