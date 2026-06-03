@@ -7,7 +7,6 @@
 **Proje Amacı:** Simülasyon ortamında (Unity) kinematik bir araç modeli kullanılarak, belirlenen virajlı bir referans yolun (şerit merkez çizgisi) **PID kontrolcü** yardımıyla otonom olarak takip edilmesidir.
 
 ![Simülasyon Görüntüsü](img/Code_Generated_Image.png)
-*(Not: Bu görsel yolunu projenizdeki gerçek ekran görüntüsü ile güncelleyebilirsiniz)*
 
 ---
 
