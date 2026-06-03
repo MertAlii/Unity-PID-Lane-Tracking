@@ -1,89 +1,94 @@
 using UnityEngine;
 
 /// <summary>
-/// High-performance real-time graph renderer using Texture2D.
-/// Draws control system signals (e(t), u(t), r(t), y(t)) as
-/// scrolling time-series graphs directly onto textures.
+/// Texture2D kullanarak yüksek performanslı gerçek zamanlı grafik çizici.
+/// Kontrol sistemi sinyallerini (e(t), u(t), r(t), y(t)) doğrudan
+/// texture üzerine kayan zaman serisi grafikleri olarak çizer.
 /// 
-/// Two graphs are rendered:
-///   1. Control Output u(t) — shows the PID steering signal over time
-///   2. Lateral Error e(t) — shows tracking error with reference line r(t)=0
+/// İki grafik çizilir:
+///   1. Kontrol Çıkışı u(t) — PID direksiyon sinyalini zaman içinde gösterir
+///   2. Yanal Hata e(t) — izleme hatasını r(t)=0 referans çizgisiyle birlikte gösterir
 /// 
-/// Performance: Uses SetPixels32 for fast pixel manipulation,
-/// only redraws when new data arrives.
+/// Performans: Hızlı piksel işleme için SetPixels32 kullanılır,
+/// yalnızca yeni veri geldiğinde yeniden çizim yapılır.
 /// </summary>
 public class GraphRenderer : MonoBehaviour
 {
     // ─────────────────────────────────────────────
-    // Graph Dimensions
+    // Grafik Boyutları
     // ─────────────────────────────────────────────
-    [Header("Graph Settings")]
-    [Tooltip("Width of each graph texture in pixels")]
+    [Header("Grafik Ayarları")]
+    [Tooltip("Her grafik texturenin piksel cinsinden genişliği")]
     public int graphWidth = 400;
 
-    [Tooltip("Height of each graph texture in pixels")]
+    [Tooltip("Her grafik texturenin piksel cinsinden yüksekliği")]
     public int graphHeight = 150;
 
-    [Tooltip("Number of data points visible on screen")]
+    [Tooltip("Ekranda görüntülenen veri noktası sayısı")]
     public int visibleDataPoints = 300;
 
     // ─────────────────────────────────────────────
-    // Colors (AMOLED-friendly dark theme)
+    // Renkler (AMOLED uyumlu koyu tema)
     // ─────────────────────────────────────────────
-    [Header("Colors")]
-    public Color backgroundColor = new Color(0.06f, 0.06f, 0.12f, 0.9f);     // Near-black
-    public Color gridColor = new Color(0.15f, 0.15f, 0.25f, 0.5f);            // Subtle grid
-    public Color axisColor = new Color(0.3f, 0.3f, 0.5f, 0.8f);               // Axis lines
-    public Color controlOutputColor = new Color(0f, 0.9f, 1f, 1f);            // Cyan for u(t)
-    public Color lateralErrorColor = new Color(1f, 0.3f, 0.3f, 1f);           // Red for e(t)
-    public Color referenceColor = new Color(0.2f, 1f, 0.4f, 0.6f);            // Green for r(t)=0
-    public Color pTermColor = new Color(1f, 0.6f, 0f, 1f);                    // Orange for P
-    public Color iTermColor = new Color(0.8f, 0.2f, 1f, 1f);                  // Purple for I
-    public Color dTermColor = new Color(1f, 1f, 0f, 1f);                      // Yellow for D
+    [Header("Renkler")]
+    public Color backgroundColor = new Color(0.06f, 0.06f, 0.12f, 0.9f);     // Neredeyse siyah
+    public Color gridColor = new Color(0.15f, 0.15f, 0.25f, 0.5f);            // Hafif ızgara
+    public Color axisColor = new Color(0.3f, 0.3f, 0.5f, 0.8f);               // Eksen çizgileri
+    public Color controlOutputColor = new Color(0f, 0.9f, 1f, 1f);            // u(t) için camgöbeği
+    public Color lateralErrorColor = new Color(1f, 0.3f, 0.3f, 1f);           // e(t) için kırmızı
+    public Color referenceColor = new Color(0.2f, 1f, 0.4f, 0.6f);            // r(t)=0 için yeşil
+    public Color pTermColor = new Color(1f, 0.6f, 0f, 1f);                    // P terimi için turuncu
+    public Color iTermColor = new Color(0.8f, 0.2f, 1f, 1f);                  // I terimi için mor
+    public Color dTermColor = new Color(1f, 1f, 0f, 1f);                      // D terimi için sarı
 
     // ─────────────────────────────────────────────
-    // Scale
+    // Ölçek (Scale)
     // ─────────────────────────────────────────────
-    [Header("Scale")]
-    [Tooltip("Y-axis range for control output graph")]
+    [Header("Ölçek")]
+    [Tooltip("Kontrol çıkış grafiği için Y ekseni aralığı")]
     public float controlOutputRange = 1.5f;
 
-    [Tooltip("Y-axis range for lateral error graph")]
+    [Tooltip("Yanal hata grafiği için Y ekseni aralığı")]
     public float lateralErrorRange = 5f;
 
-    [Tooltip("Y-axis range for PID component graphs")]
+    [Tooltip("PID bileşen grafikleri için Y ekseni aralığı")]
     public float pidComponentRange = 5f;
 
     // ─────────────────────────────────────────────
-    // References
+    // Referanslar
     // ─────────────────────────────────────────────
-    [Header("References")]
+    [Header("Referanslar")]
     public VehicleController vehicleController;
 
     // ─────────────────────────────────────────────
-    // Output Textures (assign to UI RawImage or material)
+    // Çıkış Texture'ları (UI RawImage veya materyale atanır)
     // ─────────────────────────────────────────────
     private Texture2D _controlOutputTexture;
     private Texture2D _lateralErrorTexture;
     private Texture2D _pGraphTexture;
     private Texture2D _iGraphTexture;
     private Texture2D _dGraphTexture;
+    private Texture2D _pathComparisonTexture;
 
     private Color32[] _controlPixels;
     private Color32[] _errorPixels;
     private Color32[] _pPixels;
     private Color32[] _iPixels;
     private Color32[] _dPixels;
+    private Color32[] _pathPixels;
 
-    /// <summary>Texture showing u(t) control output over time</summary>
+    /// <summary>Zaman içinde u(t) kontrol çıkışını gösteren texture</summary>
     public Texture2D ControlOutputTexture => _controlOutputTexture;
 
-    /// <summary>Texture showing e(t) lateral error over time</summary>
+    /// <summary>Zaman içinde e(t) yanal hatasını gösteren texture</summary>
     public Texture2D LateralErrorTexture => _lateralErrorTexture;
 
     public Texture2D PGraphTexture => _pGraphTexture;
     public Texture2D IGraphTexture => _iGraphTexture;
     public Texture2D DGraphTexture => _dGraphTexture;
+
+    /// <summary>r(t) ile y(t) karşılaştırmasını gösteren texture — Referans ve gerçek yanal konumun aynı eksende karşılaştırması</summary>
+    public Texture2D PathComparisonTexture => _pathComparisonTexture;
 
     private void Awake()
     {
@@ -97,25 +102,28 @@ public class GraphRenderer : MonoBehaviour
         RedrawControlOutputGraph();
         RedrawLateralErrorGraph();
         RedrawPIDGraphs();
+        RedrawPathComparisonGraph();
     }
 
     /// <summary>
-    /// Initializes the graph textures with proper settings.
+    /// Grafik texture'larını uygun ayarlarla başlatır.
     /// </summary>
     private void CreateTextures()
     {
-        _controlOutputTexture = CreateGraphTexture();
-        _lateralErrorTexture = CreateGraphTexture();
-        _pGraphTexture = CreateGraphTexture();
-        _iGraphTexture = CreateGraphTexture();
-        _dGraphTexture = CreateGraphTexture();
+        _controlOutputTexture  = CreateGraphTexture();
+        _lateralErrorTexture   = CreateGraphTexture();
+        _pGraphTexture         = CreateGraphTexture();
+        _iGraphTexture         = CreateGraphTexture();
+        _dGraphTexture         = CreateGraphTexture();
+        _pathComparisonTexture = CreateGraphTexture();
 
         int pixelCount = graphWidth * graphHeight;
         _controlPixels = new Color32[pixelCount];
-        _errorPixels = new Color32[pixelCount];
-        _pPixels = new Color32[pixelCount];
-        _iPixels = new Color32[pixelCount];
-        _dPixels = new Color32[pixelCount];
+        _errorPixels   = new Color32[pixelCount];
+        _pPixels       = new Color32[pixelCount];
+        _iPixels       = new Color32[pixelCount];
+        _dPixels       = new Color32[pixelCount];
+        _pathPixels    = new Color32[pixelCount];
     }
 
     private Texture2D CreateGraphTexture()
@@ -127,15 +135,15 @@ public class GraphRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Redraws the control output u(t) graph with latest data.
-    /// Shows the PID controller's steering command over time.
+    /// En güncel verilerle u(t) kontrol çıkış grafiğini yeniden çizer.
+    /// PID kontrolcüsünün zaman içindeki direksiyon komutunu gösterir.
     /// </summary>
     private void RedrawControlOutputGraph()
     {
         var data = vehicleController.RecordedData;
         if (data.Count < 2) return;
 
-        // Clear background
+        // Arka planı temizle
         Color32 bg = backgroundColor;
         Color32 grid = gridColor;
         Color32 axis = axisColor;
@@ -143,33 +151,42 @@ public class GraphRenderer : MonoBehaviour
         for (int i = 0; i < _controlPixels.Length; i++)
             _controlPixels[i] = bg;
 
-        // Draw horizontal grid lines
+        // Yatay ızgara çizgilerini çiz
         DrawHorizontalGrid(_controlPixels, grid, 5);
 
-        // Draw zero axis (center horizontal line)
+        // Sıfır eksenini çiz (orta yatay çizgi)
         int centerY = graphHeight / 2;
         DrawHorizontalLine(_controlPixels, centerY, axis);
 
-        // Draw data curve
+        // Veri eğrisini çiz
         int startIdx = Mathf.Max(0, data.Count - visibleDataPoints);
         int count = data.Count - startIdx;
+
+        // --- Otomatik Ölçekleme (Auto-scaling) ---
+        float maxU = 0.1f;
+        for (int i = 0; i < count; i++)
+        {
+            float v = Mathf.Abs(data[startIdx + i].controlOutput);
+            if (v > maxU) maxU = v;
+        }
+        maxU *= 1.1f; // %10 boşluk
 
         for (int i = 1; i < count && i < graphWidth; i++)
         {
             int dataIdx = startIdx + i;
             if (dataIdx >= data.Count) break;
 
-            // Map data value to pixel Y coordinate
+            // Veri değerini piksel Y koordinatına dönüştür
             float value = data[dataIdx].controlOutput;
             float prevValue = data[dataIdx - 1].controlOutput;
 
             int x = (int)((float)i / count * (graphWidth - 1));
             int prevX = (int)((float)(i - 1) / count * (graphWidth - 1));
 
-            int y = ValueToPixelY(value, controlOutputRange);
-            int prevY = ValueToPixelY(prevValue, controlOutputRange);
+            int y = ValueToPixelY(value, maxU);
+            int prevY = ValueToPixelY(prevValue, maxU);
 
-            // Draw line between consecutive points
+            // Ardışık noktalar arasına çizgi çek
             DrawLine(_controlPixels, prevX, prevY, x, y, controlOutputColor);
         }
 
@@ -178,8 +195,8 @@ public class GraphRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Redraws the lateral error e(t) graph with latest data.
-    /// Shows the tracking error and reference line r(t) = 0.
+    /// En güncel verilerle e(t) yanal hata grafiğini yeniden çizer.
+    /// İzleme hatasını ve r(t) = 0 referans çizgisini gösterir.
     /// </summary>
     private void RedrawLateralErrorGraph()
     {
@@ -193,16 +210,25 @@ public class GraphRenderer : MonoBehaviour
         for (int i = 0; i < _errorPixels.Length; i++)
             _errorPixels[i] = bg;
 
-        // Draw grid
+        // Izgarayı çiz
         DrawHorizontalGrid(_errorPixels, grid, 5);
 
-        // Draw reference line r(t) = 0 (center)
+        // r(t) = 0 referans çizgisini çiz (orta)
         int centerY = graphHeight / 2;
         DrawHorizontalLine(_errorPixels, centerY, (Color32)referenceColor);
 
-        // Draw error curve
+        // Hata eğrisini çiz
         int startIdx = Mathf.Max(0, data.Count - visibleDataPoints);
         int count = data.Count - startIdx;
+
+        // --- Otomatik Ölçekleme (Auto-scaling) ---
+        float maxE = 0.1f;
+        for (int i = 0; i < count; i++)
+        {
+            float v = Mathf.Abs(data[startIdx + i].lateralError);
+            if (v > maxE) maxE = v;
+        }
+        maxE *= 1.1f;
 
         for (int i = 1; i < count && i < graphWidth; i++)
         {
@@ -215,8 +241,8 @@ public class GraphRenderer : MonoBehaviour
             int x = (int)((float)i / count * (graphWidth - 1));
             int prevX = (int)((float)(i - 1) / count * (graphWidth - 1));
 
-            int y = ValueToPixelY(value, lateralErrorRange);
-            int prevY = ValueToPixelY(prevValue, lateralErrorRange);
+            int y = ValueToPixelY(value, maxE);
+            int prevY = ValueToPixelY(prevValue, maxE);
 
             DrawLine(_errorPixels, prevX, prevY, x, y, lateralErrorColor);
         }
@@ -226,7 +252,7 @@ public class GraphRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Redraws the PID component graphs (P, I, D).
+    /// PID bileşen grafiklerini (P, I, D) yeniden çizer.
     /// </summary>
     private void RedrawPIDGraphs()
     {
@@ -256,6 +282,20 @@ public class GraphRenderer : MonoBehaviour
         int startIdx = Mathf.Max(0, data.Count - visibleDataPoints);
         int count = data.Count - startIdx;
 
+        // --- Otomatik Ölçekleme (Auto-scaling) Hesaplaması ---
+        float maxP = 0.1f, maxI = 0.1f, maxD = 0.1f;
+        for (int i = 0; i < count; i++)
+        {
+            var d = data[startIdx + i];
+            if (Mathf.Abs(d.pTerm) > maxP) maxP = Mathf.Abs(d.pTerm);
+            if (Mathf.Abs(d.iTerm) > maxI) maxI = Mathf.Abs(d.iTerm);
+            if (Mathf.Abs(d.dTerm) > maxD) maxD = Mathf.Abs(d.dTerm);
+        }
+        // Üstte ve altta biraz boşluk bırakmak için %10 pay (padding)
+        maxP *= 1.1f;
+        maxI *= 1.1f;
+        maxD *= 1.1f;
+
         for (int i = 1; i < count && i < graphWidth; i++)
         {
             int dataIdx = startIdx + i;
@@ -267,19 +307,19 @@ public class GraphRenderer : MonoBehaviour
             int x = (int)((float)i / count * (graphWidth - 1));
             int prevX = (int)((float)(i - 1) / count * (graphWidth - 1));
 
-            // P
-            int yP = ValueToPixelY(current.pTerm, pidComponentRange);
-            int prevYP = ValueToPixelY(prev.pTerm, pidComponentRange);
+            // P terimi (Dinamik Ölçekli)
+            int yP = ValueToPixelY(current.pTerm, maxP);
+            int prevYP = ValueToPixelY(prev.pTerm, maxP);
             DrawLine(_pPixels, prevX, prevYP, x, yP, pTermColor);
 
-            // I
-            int yI = ValueToPixelY(current.iTerm, pidComponentRange);
-            int prevYI = ValueToPixelY(prev.iTerm, pidComponentRange);
+            // I terimi (Dinamik Ölçekli)
+            int yI = ValueToPixelY(current.iTerm, maxI);
+            int prevYI = ValueToPixelY(prev.iTerm, maxI);
             DrawLine(_iPixels, prevX, prevYI, x, yI, iTermColor);
 
-            // D
-            int yD = ValueToPixelY(current.dTerm, pidComponentRange);
-            int prevYD = ValueToPixelY(prev.dTerm, pidComponentRange);
+            // D terimi (Dinamik Ölçekli)
+            int yD = ValueToPixelY(current.dTerm, maxD);
+            int prevYD = ValueToPixelY(prev.dTerm, maxD);
             DrawLine(_dPixels, prevX, prevYD, x, yD, dTermColor);
         }
 
@@ -293,23 +333,86 @@ public class GraphRenderer : MonoBehaviour
         _dGraphTexture.Apply();
     }
 
+    /// <summary>
+    /// r(t) ve y(t) sinyallerini aynı grafik üzerinde çizer.
+    /// Bu, referans merkez hattını (r(t)=0, yeşil) ile
+    /// aracın gerçek yanal konumunu (y(t)=lateralError, turuncu) karşılaştırır.
+    /// Raporda "referans ve gerçek izlenen yol karşılaştırması" olarak kullanılabilir.
+    /// </summary>
+    private void RedrawPathComparisonGraph()
+    {
+        var data = vehicleController.RecordedData;
+        if (data.Count < 2) return;
+
+        Color32 bg   = backgroundColor;
+        Color32 grid = gridColor;
+        Color32 axis = axisColor;
+
+        // --- Arka planı temizle ---
+        for (int i = 0; i < _pathPixels.Length; i++)
+            _pathPixels[i] = bg;
+
+        DrawHorizontalGrid(_pathPixels, grid, 5);
+
+        // --- r(t) = 0 : Referans merkez hattı (yeşil, kalın) ---
+        int refY = graphHeight / 2;
+        DrawHorizontalLine(_pathPixels, refY,     (Color32)referenceColor);
+        DrawHorizontalLine(_pathPixels, refY + 1, (Color32)referenceColor); // 2px kalınlık
+
+        // --- y(t) : Gerçek yanal konum (turuncu) ---
+        Color yColor = new Color(1f, 0.55f, 0.1f, 1f); // Turuncu — r(t)'den ayrışık renk
+
+        int startIdx = Mathf.Max(0, data.Count - visibleDataPoints);
+        int count    = data.Count - startIdx;
+
+        // --- Otomatik Ölçekleme (Auto-scaling) ---
+        float maxY = 0.1f;
+        for (int i = 0; i < count; i++)
+        {
+            float v = Mathf.Abs(data[startIdx + i].vehiclePosX);
+            if (v > maxY) maxY = v;
+        }
+        maxY *= 1.1f;
+
+        for (int i = 1; i < count && i < graphWidth; i++)
+        {
+            int dataIdx = startIdx + i;
+            if (dataIdx >= data.Count) break;
+
+            // y(t) = vehiclePosX = lateralError (r(t)=0 referansına göre yanal konum)
+            float value     = data[dataIdx].vehiclePosX;
+            float prevValue = data[dataIdx - 1].vehiclePosX;
+
+            int x     = (int)((float)i / count * (graphWidth - 1));
+            int prevX = (int)((float)(i - 1) / count * (graphWidth - 1));
+
+            int y     = ValueToPixelY(value,     maxY);
+            int prevY = ValueToPixelY(prevValue, maxY);
+
+            DrawLine(_pathPixels, prevX, prevY, x, y, yColor);
+        }
+
+        _pathComparisonTexture.SetPixels32(_pathPixels);
+        _pathComparisonTexture.Apply();
+    }
+
     // ─────────────────────────────────────────────
-    // Drawing Helpers
+    // Çizim Yardımcı Metotları (Drawing Helpers)
     // ─────────────────────────────────────────────
 
     /// <summary>
-    /// Maps a signal value to a pixel Y coordinate.
-    /// Center of graph = 0, top = +range, bottom = -range.
+    /// Bir sinyal değerini piksel Y koordinatına dönüştürür.
+    /// Grafiğin ortası = 0, üst = +aralık, alt = -aralık.
     /// </summary>
     private int ValueToPixelY(float value, float range)
     {
-        float normalized = (value / range) * 0.5f + 0.5f; // Map [-range, range] to [0, 1]
+        float normalized = (value / range) * 0.5f + 0.5f; // [-aralık, aralık] değerini [0, 1]'e eşler
         normalized = Mathf.Clamp01(normalized);
         return (int)(normalized * (graphHeight - 1));
     }
 
     /// <summary>
-    /// Draws a horizontal line across the full graph width.
+    /// Grafik genişliği boyunca tam bir yatay çizgi çizer.
     /// </summary>
     private void DrawHorizontalLine(Color32[] pixels, int y, Color32 color)
     {
@@ -321,7 +424,7 @@ public class GraphRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Draws evenly spaced horizontal grid lines.
+    /// Eşit aralıklı yatay ızgara çizgileri çizer.
     /// </summary>
     private void DrawHorizontalGrid(Color32[] pixels, Color32 color, int divisions)
     {
@@ -333,12 +436,12 @@ public class GraphRenderer : MonoBehaviour
     }
 
     /// <summary>
-    /// Draws a line between two points using Bresenham's algorithm.
-    /// Provides smooth, anti-aliased-like graph curves.
+    /// Bresenham algoritmasını kullanarak iki nokta arasına çizgi çizer.
+    /// Grafik eğrilerinde pürüzsüz, kenar yumuşatmaya (anti-aliasing) benzer bir görünüm sağlar.
     /// </summary>
     private void DrawLine(Color32[] pixels, int x0, int y0, int x1, int y1, Color32 color)
     {
-        // Bresenham's line algorithm
+        // Bresenham doğru çizme algoritması
         int dx = Mathf.Abs(x1 - x0);
         int dy = Mathf.Abs(y1 - y0);
         int sx = x0 < x1 ? 1 : -1;
@@ -347,12 +450,12 @@ public class GraphRenderer : MonoBehaviour
 
         while (true)
         {
-            // Set pixel with bounds check
+            // Sınır kontrolü ile pikseli ayarla
             if (x0 >= 0 && x0 < graphWidth && y0 >= 0 && y0 < graphHeight)
             {
                 pixels[y0 * graphWidth + x0] = color;
 
-                // Draw thicker line (2px) for better visibility
+                // Daha iyi görünürlük için kalın çizgi çiz (2px)
                 if (y0 + 1 < graphHeight)
                     pixels[(y0 + 1) * graphWidth + x0] = color;
             }

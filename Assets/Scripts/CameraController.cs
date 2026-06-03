@@ -2,72 +2,72 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Camera controller with two modes:
-///   1. Third-Person (Chase): Smooth follow behind the vehicle
-///   2. Top-Down (Bird's Eye): Overhead view looking straight down
+/// İki modlu kamera kontrolcüsü:
+///   1. Üçüncü Şahıs (Takip): Aracın arkasından yumuşak takip
+///   2. Kuş Bakışı (Tepeden): Tam dikey yukarıdan bakış
 /// 
-/// Switch between modes using the C key or UI button.
-/// Smooth transitions between camera positions using Lerp/Slerp.
+/// Modlar arasında C tuşu veya UI butonu ile geçiş yapılır.
+/// Kamera konumları arasındaki geçişler Lerp/Slerp ile yumuşatılır.
 /// </summary>
 public class CameraController : MonoBehaviour
 {
     // ─────────────────────────────────────────────
-    // Camera Modes
+    // Kamera Modları
     // ─────────────────────────────────────────────
     public enum CameraMode
     {
-        ThirdPerson,  // Chase camera behind the vehicle
-        TopDown       // Bird's eye view from above
+        ThirdPerson,  // Aracın arkasından takip eden kamera
+        TopDown       // Yukarıdan kuş bakışı
     }
 
-    [Header("Target")]
-    [Tooltip("The vehicle transform to follow")]
+    [Header("Hedef")]
+    [Tooltip("Takip edilecek araç Transform'u")]
     public Transform target;
 
-    [Header("Camera Mode")]
+    [Header("Kamera Modu")]
     public CameraMode currentMode = CameraMode.ThirdPerson;
 
     // ─────────────────────────────────────────────
-    // Third-Person Settings
+    // Üçüncü Şahıs Kamera Ayarları
     // ─────────────────────────────────────────────
-    [Header("Third-Person (Chase) Settings")]
-    [Tooltip("Distance behind the vehicle")]
+    [Header("Üçüncü Şahıs (Takip) Ayarları")]
+    [Tooltip("Aracın arkasındaki mesafe")]
     public float chaseDistance = 8f;
 
-    [Tooltip("Height above the vehicle")]
+    [Tooltip("Araç üzerindeki yükseklik")]
     public float chaseHeight = 4f;
 
-    [Tooltip("Smoothing speed for position tracking")]
+    [Tooltip("Konum takibi için yumuşatma hızı")]
     [Range(1f, 20f)]
     public float positionSmoothSpeed = 5f;
 
-    [Tooltip("Smoothing speed for rotation tracking")]
+    [Tooltip("Dönüş takibi için yumuşatma hızı")]
     [Range(1f, 20f)]
     public float rotationSmoothSpeed = 8f;
 
-    [Tooltip("Look-ahead offset (how far in front of the car to look)")]
+    [Tooltip("İleri bakış mesafesi (kameranın aracın ne kadar önüne bakacağı)")]
     public float lookAheadDistance = 5f;
 
     // ─────────────────────────────────────────────
-    // Top-Down Settings
+    // Kuş Bakışı Kamera Ayarları
     // ─────────────────────────────────────────────
-    [Header("Top-Down (Bird's Eye) Settings")]
-    [Tooltip("Height above the vehicle for top-down view")]
+    [Header("Kuş Bakışı (Tepeden) Ayarları")]
+    [Tooltip("Kuş bakışı modunda araç üzerindeki yükseklik")]
     public float topDownHeight = 40f;
 
-    [Tooltip("Whether the top-down camera follows the vehicle horizontally")]
+    [Tooltip("Kuş bakışı kamerasının aracı yatay olarak takip edip etmeyeceği")]
     public bool topDownFollowsTarget = true;
 
     // ─────────────────────────────────────────────
-    // Transition
+    // Geçiş Ayarları
     // ─────────────────────────────────────────────
-    [Header("Transition")]
-    [Tooltip("Speed of smooth transition between camera modes")]
+    [Header("Geçiş")]
+    [Tooltip("Kamera modları arasındaki yumuşak geçiş hızı")]
     [Range(1f, 10f)]
     public float transitionSpeed = 3f;
 
     // ─────────────────────────────────────────────
-    // Internal State
+    // İç Durum Değişkenleri
     // ─────────────────────────────────────────────
     private Vector3 _currentVelocity;
 
@@ -75,13 +75,13 @@ public class CameraController : MonoBehaviour
     {
         if (target == null) return;
 
-        // Toggle camera mode with C key
+        // C tuşuna basıldığında kamera modunu değiştir
         if (Keyboard.current != null && Keyboard.current.cKey.wasPressedThisFrame)
         {
             ToggleCameraMode();
         }
 
-        // Update camera based on current mode
+        // Mevcut moda göre kamerayı güncelle
         switch (currentMode)
         {
             case CameraMode.ThirdPerson:
@@ -94,7 +94,7 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>
-    /// Switches between Third-Person and Top-Down camera modes.
+    /// Üçüncü Şahıs ve Kuş Bakışı kamera modları arasında geçiş yapar.
     /// </summary>
     public void ToggleCameraMode()
     {
@@ -104,17 +104,17 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>
-    /// Updates the third-person chase camera.
-    /// Smoothly follows behind the vehicle, looking at a point ahead of it.
+    /// Üçüncü şahıs takip kamerasını günceller.
+    /// Aracın arkasından yumuşakça takip eder, aracın önündeki bir noktaya bakar.
     /// </summary>
     private void UpdateThirdPerson()
     {
-        // Desired position: behind and above the vehicle
+        // İstenen konum: aracın arkasında ve yukarısında
         Vector3 desiredPosition = target.position 
             - target.forward * chaseDistance 
             + Vector3.up * chaseHeight;
 
-        // Smooth position transition
+        // Konum geçişini yumuşat
         transform.position = Vector3.SmoothDamp(
             transform.position, 
             desiredPosition, 
@@ -122,10 +122,10 @@ public class CameraController : MonoBehaviour
             1f / positionSmoothSpeed
         );
 
-        // Look at a point slightly ahead of the vehicle
+        // Aracın biraz önündeki bir noktaya bak
         Vector3 lookTarget = target.position + target.forward * lookAheadDistance;
 
-        // Smooth rotation transition
+        // Dönüş geçişini yumuşat
         Quaternion desiredRotation = Quaternion.LookRotation(lookTarget - transform.position);
         transform.rotation = Quaternion.Slerp(
             transform.rotation, 
@@ -135,8 +135,8 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>
-    /// Updates the top-down bird's eye camera.
-    /// Looks straight down from a fixed height above the vehicle.
+    /// Kuş bakışı kamerasını günceller.
+    /// Araç üzerinde sabit bir yükseklikten doğrudan aşağıya bakar.
     /// </summary>
     private void UpdateTopDown()
     {
@@ -144,7 +144,7 @@ public class CameraController : MonoBehaviour
 
         if (topDownFollowsTarget)
         {
-            // Follow the vehicle horizontally, fixed height
+            // Aracı yatay olarak takip et, sabit yükseklikte kal
             desiredPosition = new Vector3(
                 target.position.x,
                 topDownHeight,
@@ -153,18 +153,18 @@ public class CameraController : MonoBehaviour
         }
         else
         {
-            // Fixed position above the track center
+            // Pist merkezinin üzerinde sabit konum
             desiredPosition = new Vector3(20f, topDownHeight, 10f);
         }
 
-        // Smooth transition
+        // Yumuşak geçiş
         transform.position = Vector3.Lerp(
             transform.position, 
             desiredPosition, 
             Time.deltaTime * transitionSpeed
         );
 
-        // Look straight down
+        // Doğrudan aşağı bak
         Quaternion desiredRotation = Quaternion.Euler(90f, 0f, 0f);
         transform.rotation = Quaternion.Slerp(
             transform.rotation, 

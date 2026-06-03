@@ -2,13 +2,13 @@ using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
-/// Procedurally generates environment decorations (trees and houses) around the road.
+/// Yol çevresine prosedürel olarak çevre dekorasyonları (ağaçlar ve evler) üretir.
 /// </summary>
 [ExecuteAlways]
 [RequireComponent(typeof(RoadSpline))]
 public class EnvironmentGenerator : MonoBehaviour
 {
-    [Header("Environment Settings")]
+    [Header("Çevre Ayarları")]
     public int houseCount = 40;
     public int treeCount = 80;
     public float minDistance = 15f;
@@ -29,7 +29,7 @@ public class EnvironmentGenerator : MonoBehaviour
     [ContextMenu("Force Regenerate Environment")]
     public void GenerateEnvironment()
     {
-        // Cleanup old environment
+        // Eski çevre objelerini temizle
         Transform oldEnv = transform.Find("Environment");
         if (oldEnv != null)
         {
@@ -40,7 +40,7 @@ public class EnvironmentGenerator : MonoBehaviour
             DestroyImmediate(_envContainer);
         }
 
-        // Create new container
+        // Yeni kapsayıcı (container) oluştur
         _envContainer = new GameObject("Environment");
         _envContainer.transform.SetParent(transform);
         _envContainer.transform.localPosition = Vector3.zero;
@@ -48,7 +48,7 @@ public class EnvironmentGenerator : MonoBehaviour
         RoadSpline spline = GetComponent<RoadSpline>();
         if (spline == null || spline.controlPoints.Count < 4) return;
 
-        // Initialize Materials
+        // Materyalleri başlat
         if (treeMaterial == null || houseMaterial == null)
         {
             Shader std = Shader.Find("Universal Render Pipeline/Lit");
@@ -61,7 +61,7 @@ public class EnvironmentGenerator : MonoBehaviour
 
         _spawnedPositions.Clear();
 
-        // ── Generate Neighborhoods (Clusters of Houses) ──
+        // ── Mahalleler Oluştur (Ev Kümeleri) ──
         int neighborhoodCount = 10;
         int housesPerNeighborhood = houseCount / neighborhoodCount;
 
@@ -78,7 +78,7 @@ public class EnvironmentGenerator : MonoBehaviour
             }
         }
 
-        // ── Generate Forests (Clusters of Trees) ──
+        // ── Ormanlar Oluştur (Ağaç Kümeleri) ──
         int forestCount = 15;
         int treesPerForest = treeCount / forestCount;
 
@@ -95,7 +95,7 @@ public class EnvironmentGenerator : MonoBehaviour
             }
         }
         
-        // ── Generate Start Gate ──
+        // ── Başlangıç Kapısını Oluştur ──
         GenerateStartGate(spline);
     }
     
@@ -110,34 +110,34 @@ public class EnvironmentGenerator : MonoBehaviour
         gate.transform.position = startPos;
         gate.transform.rotation = Quaternion.LookRotation(forward);
         
-        Color metalColor = new Color(0.15f, 0.15f, 0.15f); // Dark metal
-        Color accentColor = new Color(0.9f, 0.1f, 0.1f);   // Red accent
+        Color metalColor = new Color(0.15f, 0.15f, 0.15f); // Koyu metal rengi
+        Color accentColor = new Color(0.9f, 0.1f, 0.1f);   // Kırmızı vurgu rengi
         Color whitePanel = Color.white;
         
-        float width = 6f; // distance from center to pillar
-        float height = 7f; // height of the arch
+        float width = 6f; // Merkeze olan sütun uzaklığı
+        float height = 7f; // Kapı kemer yüksekliği
 
-        // ── Left Truss Pillar ──
+        // ── Sol Kafes Sütunu ──
         CreatePrimitivePart(gate.transform, PrimitiveType.Cylinder, new Vector3(-width + 0.5f, height/2f,  0.5f), new Vector3(0.3f, height/2f, 0.3f), metalColor);
         CreatePrimitivePart(gate.transform, PrimitiveType.Cylinder, new Vector3(-width - 0.5f, height/2f,  0.5f), new Vector3(0.3f, height/2f, 0.3f), metalColor);
         CreatePrimitivePart(gate.transform, PrimitiveType.Cylinder, new Vector3(-width + 0.5f, height/2f, -0.5f), new Vector3(0.3f, height/2f, 0.3f), metalColor);
         CreatePrimitivePart(gate.transform, PrimitiveType.Cylinder, new Vector3(-width - 0.5f, height/2f, -0.5f), new Vector3(0.3f, height/2f, 0.3f), metalColor);
         
-        // ── Right Truss Pillar ──
+        // ── Sağ Kafes Sütunu ──
         CreatePrimitivePart(gate.transform, PrimitiveType.Cylinder, new Vector3(width + 0.5f, height/2f,  0.5f), new Vector3(0.3f, height/2f, 0.3f), metalColor);
         CreatePrimitivePart(gate.transform, PrimitiveType.Cylinder, new Vector3(width - 0.5f, height/2f,  0.5f), new Vector3(0.3f, height/2f, 0.3f), metalColor);
         CreatePrimitivePart(gate.transform, PrimitiveType.Cylinder, new Vector3(width + 0.5f, height/2f, -0.5f), new Vector3(0.3f, height/2f, 0.3f), metalColor);
         CreatePrimitivePart(gate.transform, PrimitiveType.Cylinder, new Vector3(width - 0.5f, height/2f, -0.5f), new Vector3(0.3f, height/2f, 0.3f), metalColor);
 
-        // ── Main Overhead Beams ──
+        // ── Ana Üst Kirişler ──
         CreatePrimitivePart(gate.transform, PrimitiveType.Cube, new Vector3(0f, height, 0f), new Vector3(width * 2f + 2f, 1f, 1.2f), metalColor);
         CreatePrimitivePart(gate.transform, PrimitiveType.Cube, new Vector3(0f, height + 1.2f, 0f), new Vector3(width * 2f + 2f, 0.2f, 1f), accentColor);
         
-        // ── "START" Panels (White boards) ──
+        // ── "START" Panoları (Beyaz Levhalar) ──
         CreatePrimitivePart(gate.transform, PrimitiveType.Cube, new Vector3(0f, height + 0.6f, 0.65f), new Vector3(6f, 1.2f, 0.1f), whitePanel);
         CreatePrimitivePart(gate.transform, PrimitiveType.Cube, new Vector3(0f, height + 0.6f, -0.65f), new Vector3(6f, 1.2f, 0.1f), whitePanel);
 
-        // ── Starting Line on the Ground (Checkered Pattern) ──
+        // ── Zemindeki Başlangıç Çizgisi (Damalı Desen) ──
         CreatePrimitivePart(gate.transform, PrimitiveType.Cube, new Vector3(0f, 0.02f, 0f), new Vector3(width * 2f - 1f, 0.01f, 1f), whitePanel);
         for(float x = -width + 1.5f; x < width - 1f; x += 1f) {
             CreatePrimitivePart(gate.transform, PrimitiveType.Cube, new Vector3(x, 0.03f, 0.25f), new Vector3(0.5f, 0.01f, 0.5f), Color.black);
@@ -170,12 +170,12 @@ public class EnvironmentGenerator : MonoBehaviour
         float propRadius = isTree ? 3f : 12f;
         spawnPos.y = 0f;
 
-        // Check road distance
+        // Yola olan mesafeyi kontrol et
         spline.GetNearestPoint(spawnPos, out Vector3 nearestPoint, out float lateralError, out Vector3 forwardDir);
         if (Mathf.Abs(lateralError) < minDistance)
             return;
 
-        // Check overlap
+        // Çakışma (overlap) kontrolü
         foreach (var pos in _spawnedPositions)
         {
             if (Vector3.Distance(pos, spawnPos) < propRadius)
@@ -193,20 +193,20 @@ public class EnvironmentGenerator : MonoBehaviour
             float scale = Random.Range(1f, 2.5f);
             prop.transform.localScale = Vector3.one * scale;
 
-            // Trunk
+            // Gövde
             GameObject trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             trunk.transform.SetParent(prop.transform);
             trunk.transform.localPosition = new Vector3(0, 1.5f, 0);
             trunk.transform.localScale = new Vector3(0.6f, 3f, 0.6f);
             SetMaterial(trunk, new Color(0.35f, 0.2f, 0.1f));
 
-            // Leaves
+            // Yapraklar
             Color[] leafColors = new Color[] {
                 new Color(0.15f, 0.7f, 0.2f),
                 new Color(0.2f, 0.85f, 0.1f),
                 new Color(0.3f, 0.6f, 0.2f),
-                new Color(1.0f, 0.6f, 0.7f), // Sakura Pink
-                new Color(0.9f, 0.5f, 0.1f)  // Autumn Orange
+                new Color(1.0f, 0.6f, 0.7f), // Sakura Pembesi
+                new Color(0.9f, 0.5f, 0.1f)  // Sonbahar Turuncusu
             };
             Color leafColor = leafColors[Random.Range(0, leafColors.Length)];
             
@@ -228,15 +228,15 @@ public class EnvironmentGenerator : MonoBehaviour
             Color roofColor = new Color(0.2f, 0.2f, 0.2f);
             Color garageColor = new Color(0.7f, 0.7f, 0.7f);
 
-            // Main Body
+            // Ana Gövde
             CreatePrimitivePart(prop.transform, PrimitiveType.Cube, new Vector3(0, 3f, 0), new Vector3(8f, 6f, 6f), houseColor);
             CreatePrimitivePart(prop.transform, PrimitiveType.Cube, new Vector3(0, 6.1f, 0), new Vector3(8.4f, 0.2f, 6.4f), roofColor);
 
-            // Second Floor
+            // İkinci Kat
             CreatePrimitivePart(prop.transform, PrimitiveType.Cube, new Vector3(-1f, 7.5f, 0f), new Vector3(5f, 3f, 5f), houseColor);
             CreatePrimitivePart(prop.transform, PrimitiveType.Cube, new Vector3(-1f, 9.1f, 0f), new Vector3(5.4f, 0.2f, 5.4f), roofColor);
 
-            // Garage
+            // Garaj
             CreatePrimitivePart(prop.transform, PrimitiveType.Cube, new Vector3(5.5f, 2f, 0.5f), new Vector3(5f, 4f, 5f), garageColor);
             CreatePrimitivePart(prop.transform, PrimitiveType.Cube, new Vector3(5.5f, 4.1f, 0.5f), new Vector3(5.4f, 0.2f, 5.4f), roofColor);
         }

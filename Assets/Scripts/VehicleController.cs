@@ -34,6 +34,14 @@ public class VehicleController : MonoBehaviour
     [Range(1f, 30f)]
     public float vehicleSpeed = 7f;
 
+    [Tooltip("Araç kütlesi (kg). Arttıkça yönelim ataleti artar — aynı PID katsayıları sistemi kontrol edemez hale gelebilir.")]
+    [Range(500f, 5000f)]
+    public float vehicleMass = 1500f;
+
+    [Tooltip("Simülasyon başlangıcında aracın şerit merkezine yanal mesafesi (m). Kontrolcünün hatayı giderme performansını gözlemlemek için.")]
+    [Range(-3f, 3f)]
+    public float initialLateralOffset = 1.5f;
+
     [Tooltip("Dingil mesafesi (Ön ve arka akslar arasındaki uzaklık) metre cinsinden")]
     public float wheelbase = 2.5f;
 
@@ -95,18 +103,19 @@ public class VehicleController : MonoBehaviour
     // ─────────────────────────────────────────────
     public struct FrameData
     {
-        public float time;           // Simülasyon zamanı
-        public float lateralError;   // e(t)
-        public float controlOutput;  // u(t)
-        public float vehiclePosX;    // y(t) — Gerçek yanal konum
-        public float referencePosX;  // r(t) — Referans yanal konum (merkezde her zaman 0)
-        public float pTerm;          // PID'nin P terimi
-        public float iTerm;          // PID'nin I terimi
-        public float dTerm;          // PID'nin D terimi
-        public float vehicleGlobalX; // Gerçek Global X koordinatı
-        public float vehicleGlobalZ; // Gerçek Global Z koordinatı
-        public float targetGlobalX;  // Referans noktasının Global X koordinatı
-        public float targetGlobalZ;  // Referans noktasının Global Z koordinatı
+        public float time;           // Simülasyon zamanı (s)
+        public float lateralError;   // e(t) = r(t) - y(t) — Yanal hata (m)
+        public float controlOutput;  // u(t) — PID kontrolcü çıkışı [-1, 1]
+        public float vehiclePosX;    // y(t) — Aracın spline çerçevesindeki yanal konumu (m) [= lateralError, r(t)=0 referansına göre]
+        public float referencePosX;  // r(t) — Referans merkez konumu (her zaman 0, spline merkezi)
+        public float pTerm;          // PID P bileşeni: Kp * e(t)
+        public float iTerm;          // PID I bileşeni: Ki * ∫e(t)dt
+        public float dTerm;          // PID D bileşeni: Kd * de(t)/dt
+        public float steeringAngle;  // δ(t) — Anlık direksiyon açısı (derece)
+        public float vehicleGlobalX; // Araç Global X koordinatı (dünya uzayı, m)
+        public float vehicleGlobalZ; // Araç Global Z koordinatı (dünya uzayı, m)
+        public float targetGlobalX;  // Referans noktası Global X koordinatı (m)
+        public float targetGlobalZ;  // Referans noktası Global Z koordinatı (m)
     }
 
     /// <summary>Gerçek zamanlı grafik görselleştirmesi için kaydedilen kare verileri</summary>
@@ -138,6 +147,10 @@ public class VehicleController : MonoBehaviour
         _simTime = 0f;
         _startTime = Time.time;
 
+        // Başlangıç yanal ofset uygula — araç şerit merkezinden sapık başlar
+        // Böylece PID kontrolcünün hatayı giderme süreci gözlemlenebilir
+        ApplyInitialLateralOffset();
+
         // Tekerlek referansları atanmamışsa otomatik olarak bul
         if (frontLeftTire == null)
             frontLeftTire = transform.Find("Sport Car_39 FL Tire");
@@ -147,6 +160,22 @@ public class VehicleController : MonoBehaviour
             backLeftTire = transform.Find("Sport Car_39 BL Tire");
         if (backRightTire == null)
             backRightTire = transform.Find("Sport Car_39 BR Tire");
+    }
+
+    /// <summary>
+    /// Başlangıç yanal ofset: aracı yol merkezinden belirli mesafede konumlandırır.
+    /// Spline'ın başlangıç yönüne dik olarak kaydırma yapılır.
+    /// </summary>
+    private void ApplyInitialLateralOffset()
+    {
+        if (roadSpline == null || Mathf.Approximately(initialLateralOffset, 0f)) return;
+
+        // Spline'ın başlangıç teğetini al (globalT = 0 → spline'ın ilk noktası)
+        Vector3 splineForward = roadSpline.EvaluateTangentGlobal(0f).normalized;
+        // Sağ vektör = forward × up
+        Vector3 splineRight = Vector3.Cross(splineForward, Vector3.up).normalized;
+        // Aracı yanal yönde kaydır
+        transform.position += splineRight * initialLateralOffset;
     }
 
     private void FixedUpdate()
@@ -193,8 +222,12 @@ public class VehicleController : MonoBehaviour
         float steeringRad = _currentSteeringAngle * Mathf.Deg2Rad;
 
         // ── Adım 4: Kinematik bisiklet modeli güncellemesi ──────
-        // Açısal hız: ω = v * tan(δ) / L
-        float angularVelocity = (vehicleSpeed * Mathf.Tan(steeringRad)) / wheelbase;
+        // Kütle ataleti: Ağır araç yönelim değişimini daha yavaş yapar.
+        // Atalet faktörü → [500 kg → 1.0x, 5000 kg → 0.1x] (doğrusal interpolasyon)
+        float inertiaFactor = Mathf.Lerp(1.0f, 0.1f, (vehicleMass - 500f) / 4500f);
+
+        // Açısal hız: ω = v * tan(δ) / L  × inertia_factor
+        float angularVelocity = (vehicleSpeed * Mathf.Tan(steeringRad)) / wheelbase * inertiaFactor;
 
         // Yönelim (heading) güncellemesi: θ(t+dt) = θ(t) + ω * dt
         _heading += angularVelocity * dt;
@@ -262,18 +295,22 @@ public class VehicleController : MonoBehaviour
     {
         FrameData data = new FrameData
         {
-            time = Time.time - _startTime,
-            lateralError = _currentLateralError,
-            controlOutput = _currentControlOutput,
-            vehiclePosX = _currentLateralError,   // y(t) yanal sapma
-            referencePosX = 0f,                   // r(t) = 0 (merkez çizgisi)
-            pTerm = pidController.LastProportional,
-            iTerm = pidController.LastIntegral,
-            dTerm = pidController.LastDerivative,
+            time           = Time.time - _startTime,
+            lateralError   = _currentLateralError,
+            controlOutput  = _currentControlOutput,
+            // y(t): Aracın spline merkez hattına göre yanal konumu.
+            // r(t) = 0 olarak alındığından, y(t) = lateralError'a eşittir.
+            // Pozitif → araç yolun sağında, Negatif → solunda.
+            vehiclePosX    = _currentLateralError,
+            referencePosX  = 0f,
+            pTerm          = pidController.LastProportional,
+            iTerm          = pidController.LastIntegral,
+            dTerm          = pidController.LastDerivative,
+            steeringAngle  = _currentSteeringAngle,
             vehicleGlobalX = transform.position.x,
             vehicleGlobalZ = transform.position.z,
-            targetGlobalX = ReferencePoint.x,
-            targetGlobalZ = ReferencePoint.z
+            targetGlobalX  = ReferencePoint.x,
+            targetGlobalZ  = ReferencePoint.z
         };
 
         RecordedData.Add(data);
@@ -296,6 +333,10 @@ public class VehicleController : MonoBehaviour
         _heading = 0f;
         _simTime = 0f;
         _startTime = Time.time;
+        _currentSteeringAngle = 0f;
+
+        // Başlangıç yanal ofsetini yeniden uygula
+        ApplyInitialLateralOffset();
 
         // PID kontrolcüsünü sıfırla
         pidController.Reset();

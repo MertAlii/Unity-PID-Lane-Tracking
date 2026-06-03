@@ -22,8 +22,8 @@ public class PIDController
     // ─────────────────────────────────────────────
     public enum ControllerMode
     {
-        P_Only,   // Sadece Oransal (Proportional) terim aktif
-        PI_Only,  // Oransal + İntegral (Proportional + Integral)
+        P_Only,   // Sadece Oransal terim aktif
+        PI_Only,  // Oransal + İntegral
         PID       // Tam PID Kontrolcü
     }
 
@@ -32,7 +32,7 @@ public class PIDController
     public ControllerMode mode = ControllerMode.PID;
 
     // ─────────────────────────────────────────────
-    // PID Kazançları (Gains) — Arayüz üzerinden canlı olarak değiştirilebilir
+    // PID Kazançları — Arayüz üzerinden canlı olarak değiştirilebilir
     // ─────────────────────────────────────────────
     [Header("PID Kazanç Değerleri (Kp, Ki, Kd)")]
     [Tooltip("Oransal kazanç (Kp): Mevcut hataya verilen doğrudan tepki")]
@@ -55,30 +55,30 @@ public class PIDController
     public float integralMax = 10f;
 
     // ─────────────────────────────────────────────
-    // Çıkış Sınırlandırması (Output Clamping)
+    // Çıkış Sınırlandırması
     // ─────────────────────────────────────────────
     [Header("Çıkış Sınırları")]
     [Tooltip("Kontrol çıkışının (u(t)) alabileceği maksimum mutlak değer")]
     public float outputMax = 1f;
 
     // ─────────────────────────────────────────────
-    // İç Durum Değişkenleri (State)
+    // İç Durum Değişkenleri
     // ─────────────────────────────────────────────
     private float _integral;       // ∫e(t)dt — Zaman içinde biriken hata
-    private float _previousError;  // e(t-1) — Bir önceki karenin (frame) hatası
+    private float _previousError;  // e(t-1) — Bir önceki karenin hatası
     private bool  _isFirstUpdate;  // İlk karede türev sıçramasını önlemek için bayrak
 
     // ─────────────────────────────────────────────
-    // Salt-okunur (Read-only) teşhis verileri (Grafikler ve UI için)
+    // Salt-okunur teşhis verileri (Grafikler ve UI için)
     // ─────────────────────────────────────────────
-    public float LastError       { get; private set; }
+    public float LastError        { get; private set; }
     public float LastProportional { get; private set; }
-    public float LastIntegral    { get; private set; }
-    public float LastDerivative  { get; private set; }
-    public float LastOutput      { get; private set; }
+    public float LastIntegral     { get; private set; }
+    public float LastDerivative   { get; private set; }
+    public float LastOutput       { get; private set; }
 
     /// <summary>
-    /// Varsayılan kazanç değerleriyle yapıcı (Constructor) metot.
+    /// Varsayılan kazanç değerleriyle yapıcı metot.
     /// </summary>
     public PIDController()
     {
@@ -124,10 +124,10 @@ public class PIDController
     /// <param name="error">Mevcut yanal hata e(t) = r(t) - y(t)</param>
     /// <param name="deltaTime">Zaman adımı (Genellikle Time.fixedDeltaTime)</param>
     /// <returns>Direksiyon yönlendirmesi için kontrol sinyali u(t)</returns>
-    
-    // Alçak Geçiren Filtre (Low-pass filter) için iç durum değişkenleri
+
+    // Alçak Geçiren Filtre için iç durum değişkenleri
     private float _filteredErrorRate = 0f;
-    private float _filterCutoff = 10f; // Hz
+    private float _filterCutoff = 10f; // Hz cinsinden kesme frekansı
 
     public float Compute(float error, float deltaTime)
     {
@@ -137,11 +137,11 @@ public class PIDController
 
         LastError = error;
 
-        // ── P: Oransal Terim (Proportional) ──────────────────────
+        // ── P: Oransal Terim ──────────────────────────────────────
         float proportional = Kp * error;
         LastProportional = proportional;
 
-        // ── I: İntegral Terimi (Integral) ──────────────────────────
+        // ── I: İntegral Terimi ────────────────────────────────────
         float integral = 0f;
         if (mode == ControllerMode.PI_Only || mode == ControllerMode.PID)
         {
@@ -153,7 +153,7 @@ public class PIDController
         }
         LastIntegral = integral;
 
-        // ── D: Türevsel Terim (Derivative) ────────────────────────
+        // ── D: Türevsel Terim ─────────────────────────────────────
         float derivative = 0f;
         if (mode == ControllerMode.PID)
         {
@@ -161,13 +161,13 @@ public class PIDController
             {
                 // Hatanın değişim hızını (türevini) hesapla
                 float rawErrorRate = (error - _previousError) / deltaTime;
-                
-                // Türev kaynaklı ani sıçramaları (D-term spike) engellemek için Alçak Geçiren Filtre uygula
+
+                // Türev kaynaklı ani sıçramaları engellemek için Alçak Geçiren Filtre uygula
                 // alpha = dt / (RC + dt), burada RC = 1 / (2*pi*fc)
                 float rc = 1f / (2f * Mathf.PI * _filterCutoff);
                 float alpha = deltaTime / (rc + deltaTime);
                 _filteredErrorRate = _filteredErrorRate + alpha * (rawErrorRate - _filteredErrorRate);
-                
+
                 derivative = Kd * _filteredErrorRate;
             }
         }
@@ -177,7 +177,7 @@ public class PIDController
         _previousError = error;
         _isFirstUpdate = false;
 
-        // ── Toplam Kontrol Çıkışı (u(t)) ───────────────────
+        // ── Toplam Kontrol Çıkışı (u(t)) ─────────────────────────
         float output = proportional + integral + derivative;
         // Çıkışı direksiyon fiziksel sınırlarına göre kısıtla
         output = Mathf.Clamp(output, -outputMax, outputMax);

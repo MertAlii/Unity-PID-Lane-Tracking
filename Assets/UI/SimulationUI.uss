@@ -250,3 +250,63 @@
     background-color: rgba(10, 10, 20, 0.6);
     -unity-background-scale-mode: stretch-to-fill;
 }
+
+/* ── Graph Header Row (title + value badges) ────────────── */
+.graph-header-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.graph-value-row {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* ── Graph Value Labels (max / now / min badges) ────────── */
+.graph-val-label {
+    font-size: 10px;
+    -unity-font-style: bold;
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-left: 4px;
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.graph-val-max {
+    color: rgb(100, 220, 140);      /* yeşil — pozitif tepe */
+    border-width: 1px;
+    border-color: rgba(100, 220, 140, 0.3);
+}
+
+.graph-val-cur {
+    color: rgb(0, 229, 255);        /* cyan — anlık değer */
+    border-width: 1px;
+    border-color: rgba(0, 229, 255, 0.3);
+}
+
+.graph-val-min {
+    color: rgb(255, 100, 100);      /* kırmızı — negatif tepe */
+    border-width: 1px;
+    border-color: rgba(255, 100, 100, 0.3);
+}
+
+/* ── Fare ile Grafik Üzerinde Gezinme Tooltip'i ─── */
+.graph-tooltip {
+    background-color: rgba(15, 15, 20, 0.95);
+    border-color: rgba(255, 255, 255, 0.2);
+    border-width: 1px;
+    border-radius: 6px;
+    padding: 6px 10px;
+    flex-direction: column;
+    pointer-events: none; /* Farenin tooltip'e takılmasını engelle */
+    /* Cam efekti (arka planı bulanıklaştır) */
+    -unity-background-image-tint-color: rgba(255, 255, 255, 1);
+}
+
+.tooltip-text {
+    margin: 0;
+    padding: 0;
+    -unity-text-align: middle-left;
+}
